@@ -31,10 +31,13 @@ DEFAULT_MODEL       = os.getenv("DEFAULT_MODEL", "llama3.2")
 DEFAULT_TEMPERATURE = float(os.getenv("DEFAULT_TEMPERATURE", "0.2"))
 
 # ── General parameters ─────────────────────────────────────────────────
-MAX_TOKENS = 4096
-TIMEOUT    = 300
+# MAX_TOKENS / MAX_STEPS are env-driven so they can be tuned live from the UI
+# (the right value depends on the model under the hood — thinking models need
+# a larger output budget or the answer gets truncated).
+MAX_TOKENS = int(os.getenv("MAX_TOKENS", "4096"))
+TIMEOUT    = int(os.getenv("TIMEOUT", "300"))
 
-MAX_STEPS       = 15
+MAX_STEPS       = int(os.getenv("MAX_STEPS", "15"))
 MAX_MESSAGES    = 30
 MAX_CHARS       = 150000
 MESSAGES_RECENT = 6

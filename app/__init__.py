@@ -41,14 +41,40 @@ def sse_subprocess(cmd, cwd):
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         text=True, encoding="utf-8", cwd=str(cwd), env=env,
     )
-    for raw in proc.stdout:
-        line = strip_ansi(raw.rstrip())
-        if line:
-            yield f"data: {json.dumps({'type': 'log', 'text': line})}\n\n"
-    proc.wait()
-    yield f"data: {json.dumps({'type': 'done', 'code': proc.returncode})}\n\n"
+    with _procs_lock:
+        _active_procs.add(proc)
+    try:
+        for raw in proc.stdout:
+            line = strip_ansi(raw.rstrip())
+            if line:
+                yield f"data: {json.dumps({'type': 'log', 'text': line})}\n\n"
+        proc.wait()
+        yield f"data: {json.dumps({'type': 'done', 'code': proc.returncode})}\n\n"
+    finally:
+        # runs on normal end AND on client disconnect (GeneratorExit):
+        # kill the subprocess so generation/LLM calls don't keep running.
+        _terminate(proc)
+        with _procs_lock:
+            _active_procs.discard(proc)
 
 SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+
+# ── Active generation subprocesses (so we can stop them on quit/disconnect) ──
+import threading
+_active_procs = set()
+_procs_lock = threading.Lock()
+
+def _terminate(proc):
+    """Stop a generation subprocess and its in-flight LLM calls."""
+    try:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except Exception:
+                proc.kill()
+    except Exception:
+        pass
 
 
 # ── Routes ────────────────────────────────────────────────────────────
@@ -113,6 +139,9 @@ def get_settings():
         "backend_url":         config.BACKEND_URL,
         "backend_key_set":     bool(config.BACKEND_KEY),
         "backend_key_preview": _mask(config.BACKEND_KEY),
+        "max_tokens":          config.MAX_TOKENS,
+        "max_steps":           config.MAX_STEPS,
+        "timeout":             config.TIMEOUT,
         "env_path":            str(ENV_PATH),
         "env_exists":          ENV_PATH.exists(),
     })
@@ -128,6 +157,9 @@ def save_settings():
         "default_model": "DEFAULT_MODEL",
         "backend_url":   "BACKEND_URL",
         "backend_key":   "BACKEND_KEY",
+        "max_tokens":    "MAX_TOKENS",
+        "max_steps":     "MAX_STEPS",
+        "timeout":       "TIMEOUT",
     }
     updates = {env_key: body[k] for k, env_key in mapping.items() if k in body and body[k] is not None}
     _upsert_env(ENV_PATH, updates)
@@ -176,9 +208,24 @@ def get_prompt(filename):
 
 @app.route("/api/quit", methods=["POST"])
 def quit_app():
-    import threading
-    threading.Timer(0.3, lambda: os._exit(0)).start()
+    def _shutdown():
+        with _procs_lock:
+            procs = list(_active_procs)
+        for p in procs:
+            _terminate(p)          # stop generations before exiting
+        os._exit(0)
+    threading.Timer(0.3, _shutdown).start()
     return jsonify({"ok": True})
+
+
+@app.route("/api/stop", methods=["POST"])
+def stop_generation():
+    """Stop any running generation without quitting the server."""
+    with _procs_lock:
+        procs = list(_active_procs)
+    for p in procs:
+        _terminate(p)
+    return jsonify({"ok": True, "stopped": len(procs)})
 
 
 @app.route("/api/prompts/<path:filename>", methods=["DELETE"])
