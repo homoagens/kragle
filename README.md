@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Three biased agents  ·  One merged brief  ·  Built for Claude Code &amp; Codex  ·  Runs on your own LLM
+  Three biased LLM passes  ·  One merged brief  ·  Built for Claude Code &amp; Codex  ·  Runs on your own LLM
 </p>
 
 <p align="center">
@@ -17,17 +17,19 @@
 
 ---
 
-You describe what you want to build. Kragle convenes a panel of three AI agents — a **pragmatist**, a **critic**, and an **architect** — each of whom reads your brief and writes an independent prompt draft from their own angle. A fourth agent acts as **jury**, merges the drafts into one coherent prompt, and saves it as a ready-to-use `prompt_<project>.md`.
+You describe what you want to build. Kragle runs your brief through a panel of three biased **LLM passes** — a **pragmatist**, a **critic**, and an **architect** — each writing an independent prompt draft from its own angle. A fourth pass acts as **jury**, merging the drafts into one coherent prompt, and saves it as a ready-to-use `prompt_<project>.md`.
 
 The result is a structured, opinionated prompt covering task, context, steps, constraints, expected output, and verification — exactly what a coding agent needs to work autonomously.
 
+> Under the hood these are plain LLM calls with different system prompts and temperatures — not autonomous agents. The orchestration is the point: bias them, run them, merge them.
+
 ---
 
-## ✦ Why three agents?
+## ✦ Why three passes?
 
 Writing a good prompt for Claude Code or Codex is harder than it looks. A single perspective misses edge cases (the critic's job), skips architectural reasoning (the architect's job), or stays too abstract to be actionable (the pragmatist's job).
 
-**Three agents with conflicting biases produce a more complete brief than any one of them would alone.** Kragle makes that disagreement productive, then resolves it.
+**Three passes with conflicting biases produce a more complete brief than any one of them would alone.** Kragle makes that disagreement productive, then resolves it.
 
 ---
 
@@ -38,11 +40,11 @@ INTAKE  →  ENSEMBLE (pragmatist + critic + architect)  →  AGGREGATE  →  pr
 ```
 
 1. **Intake** — collects context (via form in web mode, interactive Q&A in CLI mode)
-2. **Ensemble** — three independent agents, each with a different reasoning bias and temperature, write a full prompt draft
-3. **Aggregate** — a jury agent fuses the three drafts into one final prompt, resolving conflicts and keeping the best of each
+2. **Ensemble** — three independent LLM passes, each with a different reasoning bias and temperature, write a full prompt draft
+3. **Aggregate** — a final jury pass fuses the three drafts into one prompt, resolving conflicts and keeping the best of each
 4. **Output** — saved to `output/prompt_<project>.md`, displayed in the UI, ready to paste
 
-Each ensemble agent runs a full ReAct loop (take notes, reason, refine) before producing its draft. They share the same brief but start with an empty notepad — no cross-contamination between perspectives.
+Each ensemble pass is a short two-step exchange — a bias-analysis note, then the draft — not an open-ended agent loop. All three share the same brief but start from a blank notepad, so the perspectives never contaminate each other. (Only the **intake** is a genuine interactive agent, looping on `ask_user`.)
 
 ---
 
@@ -87,7 +89,7 @@ CLI mode (interactive intake with Q&A):
 python main.py
 python main.py --out ~/prompts/      # custom output directory
 python main.py --target codex        # target agent (default: claude-code)
-python main.py --steps 10            # ReAct steps per ensemble agent (default: 6)
+python main.py --steps 10            # ReAct steps per ensemble pass (default: 6)
 ```
 
 </details>
@@ -102,9 +104,9 @@ Fill in the form:
 - **Task description** — the core of the brief; be specific about files, behaviour, and expected outcome
 - **Additional context** — stack, conventions, patterns to follow, things to avoid
 - **Target** — `claude-code` or `codex`
-- **Steps per agent** — higher means more detailed drafts, longer generation time
+- **Steps per pass** — higher means more detailed drafts, longer generation time
 
-Click **Generate**. The agent log streams in real time. When done, the result panel appears with the final prompt — copy it to clipboard or download the `.md`. Previously generated prompts live in the sidebar; click to view, or delete permanently.
+Click **Generate**. The run log streams in real time. When done, the result panel appears with the final prompt — copy it to clipboard or download the `.md`. Previously generated prompts live in the sidebar; click to view, or delete permanently.
 
 The **gear icon** in the header opens an in-app settings panel: switch provider, change model and base URL, paste an API key, and save — Kragle writes `.env` and reloads config in place. No file editing required.
 
@@ -144,13 +146,13 @@ LLM_API_KEY=gsk_...
 DEFAULT_MODEL=llama-3.3-70b-versatile
 ```
 
-All three agents share the same `DEFAULT_MODEL`. The temperature varies per agent (0.15 / 0.40 / 0.65) to enforce different reasoning styles — no extra configuration needed.
+All three passes share the same `DEFAULT_MODEL`. The temperature varies per role (0.15 / 0.40 / 0.65) to enforce different reasoning styles — no extra configuration needed.
 
 ---
 
-## 🎭 Agent biases
+## 🎭 The three biases
 
-| Agent | Temp | Bias |
+| Role | Temp | Bias |
 |---|---|---|
 | **Pragmatist** | 0.15 | Concrete steps. Every file to create or modify. Exact function names. Precise order of operations. |
 | **Critic** | 0.40 | Failure modes. Wrong assumptions. Edge cases. The hardest verification scenario, not the happy path. |
