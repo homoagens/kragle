@@ -50,28 +50,30 @@ Each ensemble pass is a short two-step exchange — a bias-analysis note, then t
 
 ## ⚡ Quickstart
 
-One-shot install (creates a `venv/` and installs dependencies):
+The whole pipeline is **three scripts, run in order** — same flow on every platform. No other steps.
+
+| Step | Windows | Linux / macOS | What it does |
+|---|---|---|---|
+| **1. Install** | `install.bat` | `./install.sh` | Creates `venv/` and installs dependencies |
+| **2. Configure** | `configure.bat` | `./configure.sh` | Interactive prompt — points Kragle at your LLM and writes `.env` |
+| **3. Start** | `start.bat` | `./start.sh` | Launches the web UI and opens `http://localhost:7861` |
 
 ```bat
-install.bat       :: Windows
+:: Windows
+install.bat
+configure.bat
+start.bat
 ```
+
 ```bash
-chmod +x install.sh start.sh && ./install.sh    # Linux / macOS
+# Linux / macOS — make the scripts executable once, then run in order
+chmod +x install.sh configure.sh start.sh
+./install.sh
+./configure.sh
+./start.sh
 ```
 
-Point it at your LLM (interactive — writes `.env` for you):
-
-```bat
-configure.bat     :: Windows
-./configure.sh    # Linux / macOS
-```
-
-Launch the web UI (opens your browser at `http://localhost:7861`):
-
-```bat
-start.bat         :: Windows
-./start.sh        # Linux / macOS
-```
+That's it. Step 1 is one-time; step 2 only when you change LLM; step 3 every time you want to use Kragle.
 
 <details>
 <summary>Manual setup / CLI mode</summary>
