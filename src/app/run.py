@@ -13,7 +13,7 @@ def main():
     parser.add_argument("--host", default=config.WEB_HOST)
     parser.add_argument("--port", type=int, default=config.WEB_PORT)
     args = parser.parse_args()
-    print(f"KRAGLE UI → http://{args.host}:{args.port}")
+    print(f"KRAGLE UI -> http://{args.host}:{args.port}")
     app.run(host=args.host, port=args.port, debug=False, threaded=True)
 
 
