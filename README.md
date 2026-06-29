@@ -65,20 +65,21 @@ Step 1 is one-time; step 2 only when you change LLM; step 3 every time you use K
 <details>
 <summary>Manual setup / CLI mode</summary>
 
+All source lives under `src/`; run it from the repo root.
+
 ```bash
-cd kragle
 pip install -r requirements.txt
-cp .env.example .env       # then edit .env with your LLM credentials
-python -m app.run          # → http://0.0.0.0:7861
+cp .env.example .env                  # then edit .env with your LLM credentials
+PYTHONPATH=src python -m app.run      # web UI → http://0.0.0.0:7861
 ```
 
 CLI mode (interactive intake with Q&A):
 
 ```bash
-python main.py
-python main.py --out ~/prompts/      # custom output directory
-python main.py --target codex        # target agent (default: claude-code)
-python main.py --steps 10            # steps per ensemble pass (default: 6)
+python src/main.py
+python src/main.py --out ~/prompts/   # custom output directory
+python src/main.py --target codex     # target agent (default: claude-code)
+python src/main.py --steps 10         # steps per ensemble pass (default: 6)
 ```
 
 </details>

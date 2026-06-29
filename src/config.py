@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 
-load_dotenv(Path(__file__).parent / ".env")
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 DEBUG = os.getenv("KRAGLE_DEBUG", "").lower() in ("1", "true", "yes")
 
@@ -53,7 +53,9 @@ STREAM_TOKENS = os.getenv("KRAGLE_STREAM", "1").lower() in ("1", "true", "yes")
 STREAM_MARKER = "\x1e__KRAGLE_TOKEN__"
 
 # ── Output directory (generated prompt_*.md files) ─────────────────────
-OUTPUT_DIR = Path(__file__).parent / "output"
+# Kept at the repo root (one level above src/) so generated prompts and the
+# .env written by configure.* live together outside the source tree.
+OUTPUT_DIR = Path(__file__).resolve().parent.parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 # ── Web server ─────────────────────────────────────────────────────────

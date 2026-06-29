@@ -9,8 +9,10 @@ from pathlib import Path
 from flask import Flask, Response, jsonify, request, send_from_directory
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).parent.parent
-ENV_PATH = BASE_DIR / ".env"
+# BASE_DIR is the src/ tree (holds config.py, the web/ assets and main.py).
+# ENV_PATH points one level up, to the repo root, where configure.* writes .env.
+BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_PATH = BASE_DIR.parent / ".env"
 load_dotenv(ENV_PATH)
 
 sys.path.insert(0, str(BASE_DIR))

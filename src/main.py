@@ -7,11 +7,11 @@
 #   3. AGGREGATE — an aggregator merges the drafts into the final prompt
 #   4. OUTPUT   — prints to screen + saves to prompt_<project>.md
 #
-# Usage:
-#   python main.py              → runs the full pipeline
-#   python main.py --out dir/   → destination folder for the .md file
-#   python main.py --target codex
-#   python main.py --steps 12   → ReAct steps per agent (default 10)
+# Usage (run from the repo root):
+#   python src/main.py              → runs the full pipeline
+#   python src/main.py --out dir/   → destination folder for the .md file
+#   python src/main.py --target codex
+#   python src/main.py --steps 12   → ReAct steps per agent (default 10)
 
 import sys
 import json
