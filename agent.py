@@ -15,6 +15,7 @@
 # Completely domain-agnostic. What the agent does is decided by
 # system_prompt + skills. See README.md for an example.
 
+import sys
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -46,6 +47,28 @@ class AgentConfig:
     # (e.g. case_dir, log_dir, session_id). None = not passed.
     skill_context: object = None
     skill_context_kwarg: str = "context"  # kwarg name used to inject it
+
+
+def _token_emitter():
+    """Returns a callback that streams model tokens, or None if disabled.
+
+    In a real terminal (TTY) tokens are written raw so you see live typing.
+    As a subprocess (the web server) each token is wrapped in STREAM_MARKER so
+    the SSE layer can forward it as a 'stream' event. stdout is flushed per
+    token so the UI updates immediately rather than waiting on buffering.
+    """
+    if not getattr(config, "STREAM_TOKENS", True):
+        return None
+    if sys.stdout.isatty():
+        def emit(chunk):
+            sys.stdout.write(chunk)
+            sys.stdout.flush()
+    else:
+        marker = config.STREAM_MARKER
+        def emit(chunk):
+            sys.stdout.write(marker + json.dumps(chunk, ensure_ascii=False) + "\n")
+            sys.stdout.flush()
+    return emit
 
 
 def _log_step(log_path: Path, entry: dict):
@@ -86,6 +109,8 @@ def run_agent(cfg: AgentConfig, user_task: str, log_path: Optional[Path] = None)
     temperature = cfg.temperature if cfg.temperature is not None else config.DEFAULT_TEMPERATURE
     max_steps   = cfg.max_steps   or config.MAX_STEPS
 
+    on_token = _token_emitter()
+
     system_prompt = cfg.system_prompt
     if cfg.style:
         system_prompt += f"\n\nYour operating style: {cfg.style}"
@@ -122,6 +147,7 @@ def run_agent(cfg: AgentConfig, user_task: str, log_path: Optional[Path] = None)
             text = llm_client.call_llm(
                 messages=messages, model=model,
                 temperature=temperature, max_tokens=config.MAX_TOKENS,
+                on_token=on_token,
             )
         except Exception as e:
             console.print(f"[red]LLM error at step {step}: {e}[/red]")
@@ -193,6 +219,7 @@ def run_agent(cfg: AgentConfig, user_task: str, log_path: Optional[Path] = None)
         text     = llm_client.call_llm(
             messages=messages, model=model,
             temperature=temperature, max_tokens=config.MAX_TOKENS,
+            on_token=on_token,
         )
         response = extract_json(text)
     except Exception as e:

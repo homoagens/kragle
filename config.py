@@ -42,6 +42,16 @@ MAX_MESSAGES    = 30
 MAX_CHARS       = 150000
 MESSAGES_RECENT = 6
 
+# ── Live token streaming ───────────────────────────────────────────────
+# When enabled, agents stream the model's tokens as they are generated so
+# the UI shows the thinking/writing in real time instead of waiting for the
+# full response. STREAM_MARKER prefixes each token line emitted on stdout
+# when running as a (non-TTY) subprocess, so the web server can tag it as a
+# 'stream' SSE event. The leading \x1e (record separator) keeps it clear of
+# normal log text and ANSI stripping.
+STREAM_TOKENS = os.getenv("KRAGLE_STREAM", "1").lower() in ("1", "true", "yes")
+STREAM_MARKER = "\x1e__KRAGLE_TOKEN__"
+
 # ── Output directory (generated prompt_*.md files) ─────────────────────
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)

@@ -1,9 +1,23 @@
 # prompts.py — system prompts for KRAGLE's three agents
 
 # ──────────────────────────────────────────────────────────────────────
+# Shared latency directive — prepended to every system prompt.
+# Soft, model-agnostic way to suppress long internal reasoning without
+# relying on backend-specific flags (reasoning_effort, /no_think, etc.)
+# that not every provider accepts.
+# ──────────────────────────────────────────────────────────────────────
+NO_THINK = """RESPONSE SPEED — IMPORTANT:
+Do NOT produce extended internal reasoning, chain-of-thought, planning text,
+or any analysis before your answer. Think as little as possible and reply
+immediately. Output ONLY the required JSON object — no preamble, no
+explanation outside it. Keep the "thought" field to a single short sentence.
+
+"""
+
+# ──────────────────────────────────────────────────────────────────────
 # INTAKE — collects context from the user and produces a structured brief
 # ──────────────────────────────────────────────────────────────────────
-INTAKE_PROMPT = """You are the context-gathering assistant of KRAGLE.
+INTAKE_PROMPT = NO_THINK + """You are the context-gathering assistant of KRAGLE.
 Your only purpose is to understand precisely what the user wants to delegate
 to an AI coding agent, and produce a structured brief that your colleagues
 will use to write the final prompt.
@@ -64,7 +78,7 @@ Always reply ONLY with valid JSON in ACTION or FINAL format."""
 # ENSEMBLE — each agent writes a complete draft of the prompt in English
 # The profile (pragmatic / critical / architect) is added via `style`
 # ──────────────────────────────────────────────────────────────────────
-ENSEMBLE_PROMPT = """You are a specialist prompt engineer for AI coding agents (Claude Code, Codex).
+ENSEMBLE_PROMPT = NO_THINK + """You are a specialist prompt engineer for AI coding agents (Claude Code, Codex).
 You receive a structured context brief and must write a complete, precise, immediately
 executable prompt in English.
 
@@ -161,7 +175,7 @@ Example of correct FINAL response (NO "action" field):
 # ──────────────────────────────────────────────────────────────────────
 # AGGREGATOR — merges the three drafts into the best final prompt
 # ──────────────────────────────────────────────────────────────────────
-AGGREGATOR_PROMPT = """You are the final editor of KRAGLE, a prompt engineering system.
+AGGREGATOR_PROMPT = NO_THINK + """You are the final editor of KRAGLE, a prompt engineering system.
 You have received three draft prompts written by three specialist agents
 (pragmatic, critical, architect) working from the same context brief.
 

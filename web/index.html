@@ -98,6 +98,12 @@
   .entry.ok     { color:var(--green); }
   .entry.err    { color:var(--red); }
   .entry.dim    { color:#555; }
+  .entry.stream { color:#c9c9d6; background:#141417; border-left:2px solid var(--accent);
+                  padding:.35rem .6rem; margin:.25rem 0; border-radius:0 4px 4px 0;
+                  white-space:pre-wrap; }
+  .entry.stream::after { content:'▋'; color:var(--accent2); animation:blink 1s step-start infinite; }
+  .entry.stream.done::after { content:''; }
+  @keyframes blink { 50% { opacity:0; } }
 
   /* Result */
   #result-panel { flex-shrink:0; border-top:2px solid var(--accent); background:var(--surface);
@@ -322,6 +328,7 @@
 // ── State ──────────────────────────────────────────────────────────
 let generating = false;
 let currentContent = '';
+let streamEl = null;   // live token-streaming block, finalized when a log line arrives
 
 // ── Sidebar ────────────────────────────────────────────────────────
 async function loadPrompts() {
@@ -380,6 +387,7 @@ async function startGeneration() {
 
   const log = document.getElementById('log');
   log.innerHTML = '';
+  streamEl = null;
   closeResult();
 
   const res = await fetch('/api/generate', {
@@ -402,9 +410,11 @@ async function startGeneration() {
       const l = p.trim();
       if (!l.startsWith('data:')) continue;
       const msg = JSON.parse(l.slice(5).trim());
-      if (msg.type === 'log')    appendLog(msg.text);
-      if (msg.type === 'result') showResult(msg.filename, msg.content, false);
+      if (msg.type === 'log')    { endStream(); appendLog(msg.text); }
+      if (msg.type === 'stream') appendStream(msg.text);
+      if (msg.type === 'result') { endStream(); showResult(msg.filename, msg.content, false); }
       if (msg.type === 'done') {
+        endStream();
         generating = false;
         document.getElementById('btn-generate').disabled = false;
         document.getElementById('toolbar-status').textContent =
@@ -424,6 +434,23 @@ function appendLog(text) {
   d.textContent = text;
   log.appendChild(d);
   log.scrollTop = log.scrollHeight;
+}
+
+function appendStream(text) {
+  const log = document.getElementById('log');
+  if (!streamEl) {
+    streamEl = document.createElement('div');
+    streamEl.className = 'entry stream';
+    log.appendChild(streamEl);
+  }
+  streamEl.textContent += text;
+  log.scrollTop = log.scrollHeight;
+}
+
+// Finalize the current live block (stop the blinking cursor) so following
+// structured log lines render separately.
+function endStream() {
+  if (streamEl) { streamEl.classList.add('done'); streamEl = null; }
 }
 
 function classify(t) {

@@ -45,7 +45,17 @@ def sse_subprocess(cmd, cwd):
         _active_procs.add(proc)
     try:
         for raw in proc.stdout:
-            line = strip_ansi(raw.rstrip())
+            line = raw.rstrip("\r\n")
+            # Live token stream — forwarded verbatim as a 'stream' event.
+            if line.startswith(config.STREAM_MARKER):
+                try:
+                    chunk = json.loads(line[len(config.STREAM_MARKER):])
+                except ValueError:
+                    chunk = ""
+                if chunk:
+                    yield f"data: {json.dumps({'type': 'stream', 'text': chunk})}\n\n"
+                continue
+            line = strip_ansi(line).rstrip()
             if line:
                 yield f"data: {json.dumps({'type': 'log', 'text': line})}\n\n"
         proc.wait()

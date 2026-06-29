@@ -64,10 +64,12 @@ def aggregate(results, system_prompt=None, report_keys=None, model=None):
     ]
 
     console.print("[dim]Aggregator working...[/dim]")
+    from agent import _token_emitter
     text = llm_client.call_llm(
         messages    = messages,
         model       = model,
         temperature = 0.2,
         max_tokens  = config.MAX_TOKENS,
+        on_token    = _token_emitter(),
     )
     return extract_json(text)
